@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>QR Code Generator and Google Sheets Data Display</title>
+  <style>
+    .input-and-button {
+      display: flex;
+      align-items: center;
+    }
+    .input-field {
+      height: 30px;
+      flex-grow: 1;
+      width: 200px;
+    }
+    .my-button {
+      padding: 10px;
+      margin-top: 20px;
+    }
+    #tableDiv {
+      margin-top: 20px;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://www.gstatic.com/charts/loader.js"></script>
+  <script>
+    var valider = 0;
+    var lasNr = 0;
+
+    google.charts.load('current', { 'packages': ['corechart'] });
+
+    google.charts.setOnLoadCallback(initialize);
+
+    function initialize() {
+      document.getElementById('loadButton').addEventListener('click', function() {
+        Swal.fire({
+          title: 'Enter Password',
+          input: 'text',
+          inputLabel: 'Password',
+          inputPlaceholder: 'Enter the password'
+        }).then((result) => {
+          if (result.value === '1234567') {
+            valider = 1;
+            loadData();
+          } else {
+            Swal.fire('Incorrect password', '', 'error');
+          }
+        });
+      });
+
+      document.getElementById('showSheet2Button').addEventListener('click', function() {
+       
+       
+        Swal.fire({
+          title: 'Enter Password',
+          input: 'text',
+          inputLabel: 'Password',
+          inputPlaceholder: 'Enter the password'
+        }).then((result) => {
+          if (result.value === '1234567') {
+            valider = 1;
+            loadSheet2Data();
+          } else {
+            Swal.fire('Incorrect password', '', 'error');
+          }
+        });
+       
+      
+      
+    
+    
+    });
+    }
+
+    function loadData() {
+      if (valider == 1) {
+        var spreadsheetUrl = 'https://docs.google.com/spreadsheets/d/1KW5ZAtLI1II6CGiU-9_4WXqNDpxqn0EMETpvQ-Rj0DU/edit?pli=1&gid=1574014227#gid=1574014227';
+        var query = new google.visualization.Query(spreadsheetUrl);
+        query.send(handleQueryResponse);
+      }
+    }
+
+    function handleQueryResponse(response) {
+      if (response.isError()) {
+        console.log('Error in query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
+        return;
+      }
+
+      var data = response.getDataTable();
+      var tableDiv = document.getElementById('tableDiv');
+      tableDiv.innerHTML = '';
+
+      var numRows = data.getNumberOfRows();
+      var numCols = data.getNumberOfColumns();
+      var html = '<table border="1">';
+      html += '<tr>';
+      for (var j = 0; j < numCols; j++) {
+        html += '<th>' + data.getColumnLabel(j) + '</th>';
+      }
+      html += '</tr>';
+
+      var startRow = Math.max(numRows - 100, 0);
+      for (var i = numRows - 1; i >= startRow; i--) {
+        html += '<tr>';
+        for (var j = 0; j < numCols; j++) {
+          html += '<td>' + data.getValue(i, j) + '</td>';
+        }
+        html += '</tr>';
+      }
+      html += '</table>';
+      tableDiv.innerHTML = html;
+
+      if (lasNr < numRows) {
+        playAlert();
+        Swal.fire('Data Loaded', `Number of rows: ${numRows}`, 'success');
+        lasNr = numRows;
+      }
+    }
+
+    function loadSheet2Data() {
+      var spreadsheetUrl = 'https://docs.google.com/spreadsheets/d/1KW5ZAtLI1II6CGiU-9_4WXqNDpxqn0EMETpvQ-Rj0DU/edit?pli=1&gid=166235360#gid=166235360';
+      var query = new google.visualization.Query(spreadsheetUrl);
+      query.send(handleSheet2Response);
+    }
+
+    function handleSheet2Response(response) {
+      if (response.isError()) {
+        console.log('Error in query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
+        return;
+      }
+
+      var data = response.getDataTable();
+      var numRows = data.getNumberOfRows();
+      var numCols = data.getNumberOfColumns();
+      var html = '<table border="1">';
+      html += '<tr>';
+      for (var j = 0; j < numCols; j++) {
+        html += '<th>' + data.getColumnLabel(j) + '</th>';
+      }
+      html += '</tr>';
+
+      var startRow = Math.max(numRows - 100, 0);
+      for (var i = numRows - 1; i >= startRow; i--) { // Reverse order
+        html += '<tr>';
+        for (var j = 0; j < numCols; j++) {
+          html += '<td>' + data.getValue(i, j) + '</td>';
+        }
+        html += '</tr>';
+      }
+      html += '</table>';
+
+      Swal.fire({
+        title: 'Sheet 2 Data',
+        html: html,
+        width: '80%',
+      });
+    }
+
+    setInterval(loadData, 20000);
+
+    function playAlert() {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      oscillator.type = 'sine'; // Type of sound wave: sine, square, sawtooth, triangle
+      oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // Frequency in Hertz (A4 note)
+
+      oscillator.start();
+      gainNode.gain.setValueAtTime(1, audioContext.currentTime); // Set volume to max
+
+      setTimeout(() => {
+        oscillator.stop();
+        audioContext.close();
+      }, 4000); // Stop after 4 seconds
+    }
+  </script>
+</head>
+<body>
+  <div class="input-and-button"></div>
+  <div id="qrcode" class="qr-code"></div>
+  <button id="loadButton" class="my-button" style="margin-top: 20px;">Load Data</button>
+  <button id="showSheet2Button" class="my-button" style="margin-top: 20px;">Show Sheet 2</button>
+  <div id="tableDiv"></div>
+</body>
+</html>
